@@ -1,0 +1,50 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type User {
+  id: Int!
+  name: String!
+  password: String!
+  currentLocation: Location
+  favoriteLocations: [Location!]
+  createdLocations: [Location!]
+}
+
+type Location {
+  id: Int!
+  name: String!
+  lnglat: String
+  privacy: String!
+  createdOn: DateTime!
+  createdBy: User
+  favoritedBy: [User!]
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type Query {
+  userTest: String!
+  allUsers: [User!]!
+  user(id: Int!): User!
+  locationTest: String!
+  allLocations: [Location!]!
+  Location(id: Int!): Location!
+}
+
+type Mutation {
+  createUser(currentLocation: Float, password: String!, name: String!): User!
+  updateUser(currentLocation: Float, password: Float, name: String, id: Float!): User!
+  createLocation(location: CreateLocationArgs!): Location!
+  updateLocation(id: Int!, name: String, lnglat: String, privacy: String): Location!
+}
+
+input CreateLocationArgs {
+  name: String!
+  createdBy: Int!
+  lnglat: String
+  privacy: String
+}
