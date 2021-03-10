@@ -6,6 +6,6 @@ export class UpdateLocationArgs {
   @Field({ nullable: true }) name?: string;
   @Field({ nullable: true }) lnglat?: string;
   @Field({ nullable: true }) privacy?: string;
-  // @Field(() => [Number], { nullable: true }) favoritedBy?: [number];
+  @Field(() => [Int], { nullable: true }) favoritedBy?: [number];
   // @Field(() => [Number], { nullable: true }) adventures?: [number];
 }

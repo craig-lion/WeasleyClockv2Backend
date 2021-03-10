@@ -11,8 +11,19 @@ export class LocationService {
     private connection: Connection,
   ) {}
 
-  findLocations(): Promise<Location[]> {
-    return this.locationsRepository.find();
+  async findLocations(id?: number[]): Promise<Location[]> {
+    if (id.length === 0) {
+      console.log('check');
+      return null;
+    }
+    const options = {
+      where: id.map((id) => {
+        return { id };
+      }),
+      relations: ['createdBy'],
+    };
+    const data = await this.locationsRepository.find(options);
+    return data;
   }
 
   findLocation(id: number): Promise<Location> {
@@ -22,6 +33,8 @@ export class LocationService {
   async removeLocation(id: number): Promise<void> {
     await this.locationsRepository.delete(id);
   }
+
+  //TODO: when createing location graph returns user 1 even if createdBy different user - data is entered correctly still
 
   async createLocation({ name, createdBy, lnglat, privacy }) {
     const queryRunner = this.connection.createQueryRunner();
@@ -51,21 +64,31 @@ export class LocationService {
     }
   }
 
+  // TODO: either us separate @Args or inline Args for everything
+
   async updateLocation({
     id,
     name,
     lnglat,
     privacy,
-    // favoritedBy,
+    favoritedBy,
     // adventures,
   }) {
     const queryRunner = this.connection.createQueryRunner();
     const location = new Location();
     location.id = id;
-    location.name = name;
-    location.lnglat = lnglat;
-    location.privacy = privacy;
-    // location.favoritedBy = favoritedBy;
+    if (name) {
+      location.name = name;
+    }
+    if (lnglat) {
+      location.lnglat = lnglat;
+    }
+    if (privacy) {
+      location.privacy = privacy;
+    }
+    if (favoritedBy) {
+      location.favoritedBy = favoritedBy;
+    }
     // location.adventures = adventures;
 
     await queryRunner.connect();

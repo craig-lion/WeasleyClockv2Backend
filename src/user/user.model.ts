@@ -48,7 +48,9 @@ export class User {
   })
   favoriteLocations?: Location[];
 
-  @Field(() => [Location], { nullable: true })
+  // make sure created Locations can be empty but always at least returns emptry array
+
+  @Field(() => [Location], { nullable: 'items' })
   @OneToMany(() => Location, (location) => location.createdBy)
   createdLocations?: Location[];
 

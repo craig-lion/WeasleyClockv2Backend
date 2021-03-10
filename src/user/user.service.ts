@@ -12,21 +12,35 @@ export class UserService {
   ) {}
 
   async findUsers(): Promise<User[]> {
-    console.log('users', await this.usersRepository.find());
-    return this.usersRepository.find();
+    // console.log('users', await this.usersRepository.find());
+    return this.usersRepository.find({
+      relations: ['currentLocation', 'createdLocations', 'favoriteLocations'],
+    });
   }
 
-  findAll(options?: FindManyOptions<User>) {
-    return this.usersRepository.find(options);
+  async find(id?: number[]) {
+    if (id.length === 0) {
+      console.log('check');
+      return null;
+    }
+    const options = {
+      where: id.map((id) => {
+        return { id };
+      }),
+      relations: ['currentLocation', 'createdLocations', 'favoriteLocations'],
+    };
+    console.log('this is options: ', options)
+    const data = await this.usersRepository.find(options);
+    return data;
   }
 
   async findUser(id: number): Promise<User> {
-    console.log(
-      'id',
-      id,
-      'this should be a user: ',
-      await this.usersRepository.findOne(id),
-    );
+    // console.log(
+    //   'id',
+    //   id,
+    //   'this should be a user: ',
+    //   await this.usersRepository.findOne(id),
+    // );
     return await this.usersRepository.findOne(id);
   }
 
@@ -61,9 +75,8 @@ export class UserService {
     return `New User ${name} Created`;
   }
 
-  async updateUser(updateUserData) {
+  async updateUser({ id, name, password, currentLocation, favoriteLocations }) {
     const queryRunner = this.connection.createQueryRunner();
-    const { id, name, password, currentLocation } = updateUserData;
     const user: User = await this.findUser(id);
     console.log('user after find: ', user);
     user.id = id;
@@ -76,13 +89,16 @@ export class UserService {
     if (currentLocation) {
       user.currentLocation = currentLocation;
     }
-    // user.favoriteLocations = favoriteLocations;
+    if (favoriteLocations) {
+      user.favoriteLocations = favoriteLocations;
+    }
     // user.friends = friends;
     // console.log('user', user);
 
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
+      console.log('user before save', user);
       await queryRunner.manager.save(user);
 
       await queryRunner.commitTransaction();

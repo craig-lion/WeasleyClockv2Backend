@@ -37,7 +37,7 @@ export class Location {
   createdOn: Date;
 
   @Field(() => User)
-  @ManyToOne(() => User, (user) => user.createdLocations)
+  @ManyToOne(() => User, (user) => user.createdLocations, { eager: true })
   createdBy: User;
 
   @Field(() => [User], { nullable: true })

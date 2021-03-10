@@ -6,7 +6,6 @@ import {
   ResolveField,
   Parent,
   Int,
-  Root,
 } from '@nestjs/graphql';
 import { Location } from 'src/location/location.model';
 import { LocationService } from '../location/location.service';
@@ -27,13 +26,9 @@ export class LocationResolver {
   ) {}
 
   @ResolveField('createdBy', () => User, { nullable: true })
-  async getCreatedBy(@Root() location: Location) {
-    const { id } = location;
-    const { createdBy } = location;
-    console.log('resolveField createdBy: ', location);
-    console.log('createdBy: ', createdBy);
+  async getCreatedBy(@Parent() location: Location) {
+    const id = location.createdBy.id;
     const data = await this.userService.findUser(id);
-    console.log('this is data: ', data);
     return data;
   }
 
@@ -51,19 +46,21 @@ export class LocationResolver {
   //   return this.locationService.findLocation(id);
   // }
 
-  @Query(() => String)
-  async locationTest() {
-    return 'yarrr this be a Location test';
-  }
-
   @Query(() => [Location], { name: 'allLocations' })
   async locations() {
-    return this.locationService.findLocations();
+    const data = await this.locationService.findLocations();
+    console.log(
+      'data in Locations Query: ',
+      data.map((data) => Object.keys(data)),
+    );
+    return data;
   }
 
   @Query(() => Location, { name: 'Location' })
   async oneLocation(@Args('id', { type: () => Int }) id: number) {
-    return this.locationService.findLocation(id);
+    const data = await this.locationService.findLocation(id);
+    console.log('data in locations resolver: ', data);
+    return data;
   }
 
   @Mutation(() => Location, { name: 'createLocation' })
@@ -86,8 +83,8 @@ export class LocationResolver {
       name,
       lnglat,
       privacy,
-    }: // favoritedBy,
-    // adventures,
+      favoritedBy,
+    }: // adventures,
     UpdateLocationArgs,
   ) {
     return this.locationService.updateLocation({
@@ -95,7 +92,7 @@ export class LocationResolver {
       name,
       lnglat,
       privacy,
-      // favoritedBy,
+      favoritedBy,
       // adventures,
     });
   }

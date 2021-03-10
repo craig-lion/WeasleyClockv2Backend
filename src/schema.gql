@@ -27,19 +27,17 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 scalar DateTime
 
 type Query {
-  userTest: String!
   allUsers: [User!]!
   user(id: Int!): User!
-  locationTest: String!
   allLocations: [Location!]!
   Location(id: Int!): Location!
 }
 
 type Mutation {
   createUser(currentLocation: Float, password: String!, name: String!): User!
-  updateUser(currentLocation: Float, password: Float, name: String, id: Float!): User!
+  updateUser(id: Int!, name: String, password: String, currentLocation: Int, favoriteLocations: [Int!]): User!
   createLocation(location: CreateLocationArgs!): Location!
-  updateLocation(id: Int!, name: String, lnglat: String, privacy: String): Location!
+  updateLocation(id: Int!, name: String, lnglat: String, privacy: String, favoritedBy: [Int!]): Location!
 }
 
 input CreateLocationArgs {

@@ -1,10 +1,7 @@
-import { Field, InputType, Int } from '@nestjs/graphql';
-import { Location } from 'src/location/location.model';
-// import { FriendRequest } from 'src/requests/friendRequest.model';
-import { User } from './user.model';
+import { Field, Int, ArgsType } from '@nestjs/graphql';
 
-@InputType()
-export class UpdateUserInput implements Partial<User> {
+@ArgsType()
+export class UpdateUserInput {
   @Field(() => Int)
   id: number;
 
@@ -14,11 +11,11 @@ export class UpdateUserInput implements Partial<User> {
   @Field({ nullable: true })
   password?: string;
 
-  @Field(() => Location, { nullable: true })
-  currentLocation?: Location;
+  @Field(() => Int, { nullable: true })
+  currentLocation?: number;
 
-  // @Field(() => [Location], { nullable: true })
-  // favoriteLocations?: Location[];
+  @Field(() => [Int], { nullable: true })
+  favoriteLocations?: [number];
 
   // @Field(() => [FriendRequest], { nullable: true })
   // friends?: FriendRequest[];

@@ -27,23 +27,40 @@ export class UserResolver {
   ) {}
 
   @ResolveField('currentLocation', () => Location, { nullable: true })
-  async getCurrentLocation(@Parent() location: Location) {
-    const { id } = location;
+  async getCurrentLocation(@Parent() user: User) {
+    const id = user.currentLocation?.id;
+    if (!id) {
+      return null;
+    }
     return this.locationService.findLocation(id);
   }
 
   // TODO: Can I pass array?
 
   @ResolveField('favoriteLocations', () => [Location], { nullable: true })
-  async getFavoriteLocations(@Parent() location: Location) {
-    const { id } = location;
-    return this.locationService.findLocation(id);
+  async getFavoriteLocations(@Parent() user: User) {
+    const id = user.favoriteLocations?.map((location) => location);
+    // console.log(
+    //   'user.map: ',
+    //   user.favoriteLocations.map((location) => console.log(location)),
+    // );
+    console.log(
+      'this is user.favoriteLocations: ',
+      user.favoriteLocations,
+      typeof user.favoriteLocations,
+    );
+    console.log('this is id: ', id);
+    return this.locationService.findLocations([1]);
   }
 
   @ResolveField('createdLocations', () => [Location], { nullable: true })
-  async getCreatedLocations(@Parent() location: Location) {
-    const { id } = location;
-    return this.locationService.findLocation(id);
+  async getCreatedLocations(@Parent() user: User) {
+    const id = user.createdLocations?.map((location) => location.id);
+    // const { id } = user;
+    // console.log('this is user: ', user);
+    // console.log('this is user.createdLocations: ', user.createdLocations);
+    // console.log('this is id: ', id);
+    return this.locationService.findLocations(id);
   }
 
   // @ResolveField('createdAdventures', () => [AdventureRequest])
@@ -64,17 +81,15 @@ export class UserResolver {
   //   this.friendRequestService.findFriendRequest(id);
   // }
 
-  @Query(() => String)
-  async userTest() {
-    return 'yarrr this be a Usertest';
-  }
   @Query(() => [User], { name: 'allUsers' })
   async users() {
     return this.userService.findUsers();
   }
   @Query(() => User, { name: 'user' })
   async user(@Args('id', { type: () => Int }) id: number) {
-    return this.userService.findUser(id);
+    const data = await this.userService.find([id]);
+    console.log('this is data in user query: ', data);
+    return data;
   }
 
   @Mutation(() => User, { name: 'createUser' })
@@ -88,14 +103,17 @@ export class UserResolver {
 
   @Mutation(() => User, { name: 'updateUser' })
   async updateUser(
-    @Args('id') id: number,
-    @Args('name', { nullable: true }) name?: string,
-    @Args('password', { nullable: true }) password?: number,
-    @Args('currentLocation', { nullable: true }) currentLocation?: number,
-    // @Args('updateUserData') updateUserData: UpdateUserInput,
+    // TODO: should be UpdateUserArgs
+    @Args()
+    { id, name, password, currentLocation, favoriteLocations }: UpdateUserInput,
   ) {
     // console.log({ id, name, password, currentLocation });
-    return this.userService.updateUser({ id, name, password, currentLocation });
-    // return this.userService.updateUser(updateUserData)
+    return this.userService.updateUser({
+      id,
+      name,
+      password,
+      currentLocation,
+      favoriteLocations,
+    });
   }
 }
