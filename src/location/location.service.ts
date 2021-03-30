@@ -11,13 +11,13 @@ export class LocationService {
     private connection: Connection,
   ) {}
 
-  async findLocations(id?: number[]): Promise<Location[]> {
-    if (id.length === 0) {
-      console.log('check');
-      return null;
+  async findLocations(ids: number[]): Promise<Location[]> {
+    if (ids.length === 0) {
+      console.log('this is what is happening');
+      return [];
     }
     const options = {
-      where: id.map((id) => {
+      where: ids.map((id) => {
         return { id };
       }),
       relations: ['createdBy'],
@@ -26,8 +26,11 @@ export class LocationService {
     return data;
   }
 
-  findLocation(id: number): Promise<Location> {
-    return this.locationsRepository.findOne(id);
+  async allLocations(): Promise<Location[]> {
+    const options = {
+      relations: ['createdBy'],
+    };
+    return this.locationsRepository.find(options);
   }
 
   async removeLocation(id: number): Promise<void> {
@@ -36,17 +39,17 @@ export class LocationService {
 
   //TODO: when createing location graph returns user 1 even if createdBy different user - data is entered correctly still
 
-  async createLocation({ name, createdBy, lnglat, privacy }) {
+  async createLocation({ name, user, lnglat, privacy }) {
     const queryRunner = this.connection.createQueryRunner();
     const location = new Location();
     location.name = name;
-    location.createdBy = createdBy;
+    location.createdBy = user;
     location.createdOn = new Date();
     location.privacy = privacy || 'private';
     location.lnglat = lnglat || '37.773972, -122.431297';
-    location.favoritedBy = [createdBy];
+    location.favoritedBy = [user];
 
-    console.log('this is location', location);
+    console.log('this is location in createLocation', location);
 
     await queryRunner.connect();
     await queryRunner.startTransaction();

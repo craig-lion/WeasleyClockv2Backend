@@ -4,9 +4,16 @@ import { UserResolver } from './user.resolver';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './user.model';
 import { LocationModule } from 'src/location/location.module';
+import { AdventureModule } from 'src/adventure/adventure.module';
+import { RequestsModule } from 'src/requests/requests.module';
 
 @Module({
-  imports: [forwardRef(() => LocationModule), TypeOrmModule.forFeature([User])],
+  imports: [
+    forwardRef(() => LocationModule),
+    forwardRef(() => AdventureModule),
+    forwardRef(() => RequestsModule),
+    TypeOrmModule.forFeature([User]),
+  ],
   providers: [UserService, UserResolver],
   exports: [UserService],
 })

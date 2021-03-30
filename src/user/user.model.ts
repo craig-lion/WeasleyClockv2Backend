@@ -9,20 +9,21 @@ import {
 } from 'typeorm';
 import { ObjectType, Field, Int } from '@nestjs/graphql';
 import { Location } from '../location/location.model';
-// import { Adventure } from '../adventure/adventure.model';
-// import { AdventureRequest } from 'src/requests/adventureRequest.model';
-// import { FriendRequest } from 'src/requests/friendRequest.model';
+import { Adventure } from '../adventure/adventure.model';
+import { AdventureRequest } from 'src/requests/adventureRequest.model';
+import { FriendRequest } from 'src/requests/friendRequest.model';
 
 @ObjectType()
 @Entity()
 export class User {
-  @Field(() => Int)
+  @Field(() => Int, { nullable: true })
   @PrimaryGeneratedColumn()
   id: number;
 
   @Field(() => String)
   @Column({
     unique: true,
+    nullable: true,
   })
   name: string;
 
@@ -31,8 +32,8 @@ export class User {
   password: string;
 
   @Field(() => Location, { nullable: true })
-  @ManyToOne(() => Location, (location) => location.favoritedBy)
-  currentLocation?: Location;
+  @ManyToOne(() => Location, (location) => location.currentUsers)
+  currentLocation: Location;
 
   // @Field(() => [Location], { nullable: true })
   // @ManyToMany(() => Location)
@@ -40,7 +41,7 @@ export class User {
   // favoriteLocations?: Location[];
 
   @Field(() => [Location], { nullable: true })
-  @ManyToMany(() => Location)
+  @ManyToMany(() => Location, { cascade: true })
   @JoinTable({
     name: 'user_favoriteLocations',
     joinColumn: { name: 'userId', referencedColumnName: 'id' },
@@ -50,22 +51,22 @@ export class User {
 
   // make sure created Locations can be empty but always at least returns emptry array
 
-  @Field(() => [Location], { nullable: 'items' })
+  @Field(() => [Location], { nullable: true })
   @OneToMany(() => Location, (location) => location.createdBy)
-  createdLocations?: Location[];
+  createdLocations: Location[];
 
-  // @Field(() => [Adventure], { nullable: true })
-  // @OneToMany(() => Adventure, (adventure) => adventure.createdBy)
-  // createdAdventures?: Adventure[];
+  @Field(() => [Adventure], { nullable: true })
+  @OneToMany(() => Adventure, (adventure) => adventure.createdBy)
+  createdAdventures?: Adventure[];
 
-  // @Field(() => [AdventureRequest], { nullable: true })
-  // @OneToMany(
-  //   () => AdventureRequest,
-  //   (adventureRequest) => adventureRequest.recipient,
-  // )
-  // adventures?: AdventureRequest[];
+  @Field(() => [AdventureRequest], { nullable: true })
+  @OneToMany(
+    () => AdventureRequest,
+    (adventureRequest) => adventureRequest.recipient,
+  )
+  adventures?: AdventureRequest[];
 
-  // @Field(() => [FriendRequest], { nullable: true })
-  // @OneToMany(() => FriendRequest, (friendRequest) => friendRequest.recipient)
-  // friends?: FriendRequest[];
+  @Field(() => [FriendRequest], { nullable: true })
+  @OneToMany(() => FriendRequest, (friendRequest) => friendRequest.recipient)
+  friends?: FriendRequest[];
 }

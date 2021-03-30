@@ -2,23 +2,16 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type User {
-  id: Int!
-  name: String!
-  password: String!
-  currentLocation: Location
-  favoriteLocations: [Location!]
-  createdLocations: [Location!]
-}
-
 type Location {
   id: Int!
   name: String!
   lnglat: String
   privacy: String!
   createdOn: DateTime!
-  createdBy: User
+  createdBy: User!
+  currentUsers: User!
   favoritedBy: [User!]
+  adventures: [Adventure!]
 }
 
 """
@@ -26,18 +19,71 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+type AdventureRequest {
+  id: Int!
+  createdBy: User!
+  createdOn: DateTime!
+  status: String!
+  recipient: User!
+  adventure: Adventure!
+}
+
+type FriendRequest {
+  id: Int!
+  createdBy: User!
+  createdOn: DateTime!
+  status: String!
+  recipient: User!
+}
+
+type User {
+  id: Int
+  name: String!
+  password: String!
+  currentLocation: Location
+  favoriteLocations: [Location!]
+  createdLocations: [Location!]
+  createdAdventures: [Adventure!]
+  adventures: [AdventureRequest!]
+  friends: [FriendRequest!]!
+}
+
+type Adventure {
+  id: Int!
+  name: String!
+  time: DateTime!
+  createdBy: User!
+  createdOn: DateTime!
+  message: String
+  location: Location!
+  requests: AdventureRequest
+}
+
 type Query {
   allUsers: [User!]!
-  user(id: Int!): User!
+  user(id: Int!): [User!]!
   allLocations: [Location!]!
   Location(id: Int!): Location!
+  allAdventures: [Adventure!]!
+  Adventure(id: Int!): Adventure!
+  AllFriendRequests: [FriendRequest!]!
+  FriendRequest(id: Int!): FriendRequest!
+  AllAdventureRequests: [AdventureRequest!]!
+  AdventureRequest(id: Int!): AdventureRequest!
 }
 
 type Mutation {
   createUser(currentLocation: Float, password: String!, name: String!): User!
   updateUser(id: Int!, name: String, password: String, currentLocation: Int, favoriteLocations: [Int!]): User!
-  createLocation(location: CreateLocationArgs!): Location!
+  deleteUser(id: Int!): Boolean!
+  createLocation(createLocation: CreateLocationArgs!): Location!
   updateLocation(id: Int!, name: String, lnglat: String, privacy: String, favoritedBy: [Int!]): Location!
+  createAdventure(createAdventure: CreateAdventureArgs!): Adventure!
+  updateAdventure(adventure: UpdateAdventureArgs!): Adventure!
+  createFriendRequest(createFriendRequest: CreateFriendRequestArgs!): FriendRequest!
+  updateFriendRequest(updateFriendRequest: UpdateFriendRequestArgs!): FriendRequest!
+  createAdventureRequest(createAdventureRequest: CreateAdventureRequestArgs!): AdventureRequest!
+  updateAdventureRequest(updateAdventureRequest: UpdateAdventureRequestArgs!): AdventureRequest!
 }
 
 input CreateLocationArgs {
@@ -45,4 +91,41 @@ input CreateLocationArgs {
   createdBy: Int!
   lnglat: String
   privacy: String
+}
+
+input CreateAdventureArgs {
+  name: String!
+  time: DateTime
+  createdBy: Int!
+  message: String
+  location: Int!
+}
+
+input UpdateAdventureArgs {
+  id: Int!
+  name: String!
+  time: DateTime
+  message: String
+  location: Int!
+}
+
+input CreateFriendRequestArgs {
+  createdBy: Int!
+  recipient: Int!
+}
+
+input UpdateFriendRequestArgs {
+  id: Int!
+  status: String!
+}
+
+input CreateAdventureRequestArgs {
+  createdBy: Int!
+  recipient: Int!
+  adventure: Int!
+}
+
+input UpdateAdventureRequestArgs {
+  id: Int!
+  status: String!
 }

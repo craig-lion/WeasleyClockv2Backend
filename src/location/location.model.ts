@@ -2,13 +2,14 @@ import {
   Entity,
   Column,
   PrimaryGeneratedColumn,
+  OneToMany,
   ManyToOne,
   ManyToMany,
   CreateDateColumn,
   JoinTable,
 } from 'typeorm';
 import { ObjectType, Field, Int } from '@nestjs/graphql';
-// import { Adventure } from 'src/adventure/adventure.model';
+import { Adventure } from 'src/adventure/adventure.model';
 import { User } from '../user/user.model';
 
 @ObjectType()
@@ -37,8 +38,12 @@ export class Location {
   createdOn: Date;
 
   @Field(() => User)
-  @ManyToOne(() => User, (user) => user.createdLocations, { eager: true })
+  @ManyToOne(() => User, (user) => user.createdLocations)
   createdBy: User;
+
+  @Field(() => User)
+  @ManyToOne(() => User, (user) => user.currentLocation)
+  currentUsers: User[];
 
   @Field(() => [User], { nullable: true })
   @ManyToMany(() => User)
@@ -49,7 +54,7 @@ export class Location {
   })
   favoritedBy: User[];
 
-  // @Field(() => [Adventure], { nullable: true })
-  // @OneToMany(() => Adventure, (adventure) => adventure.location)
-  // adventures: Adventure[];
+  @Field(() => [Adventure], { nullable: true })
+  @OneToMany(() => Adventure, (adventure) => adventure.location)
+  adventures: Adventure[];
 }

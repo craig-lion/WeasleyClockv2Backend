@@ -16,7 +16,4 @@ export class UpdateUserInput {
 
   @Field(() => [Int], { nullable: true })
   favoriteLocations?: [number];
-
-  // @Field(() => [FriendRequest], { nullable: true })
-  // friends?: FriendRequest[];
 }

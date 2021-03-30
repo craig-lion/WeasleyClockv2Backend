@@ -14,8 +14,8 @@ import { UpdateUserInput } from './user-input.updateUser';
 import { User } from './user.model';
 import { UserService } from './user.service';
 // import { AdventureRequestService } from '../requests/adventureRequest.service';
-// import { FriendRequestService } from 'src/requests/friendRequest.service';
-// import { FriendRequest } from 'src/requests/friendRequest.model';
+import { FriendRequestService } from 'src/requests/friendRequest.service';
+import { FriendRequest } from 'src/requests/friendRequest.model';
 
 //TODO: Can I name overall resolver and then simplify mutation names i.e. user{mutation{update}}
 
@@ -23,19 +23,22 @@ import { UserService } from './user.service';
 export class UserResolver {
   constructor(
     private userService: UserService,
-    private locationService: LocationService, // private adventureRequestService: AdventureRequestService, // private friendRequestService: FriendRequestService,
+    private locationService: LocationService, // private adventureRequestService: AdventureRequestService,
+    private friendRequestService: FriendRequestService,
   ) {}
 
   @ResolveField('currentLocation', () => Location, { nullable: true })
   async getCurrentLocation(@Parent() user: User) {
+    console.log('this is user in oneUSer: ', user.currentLocation);
     const id = user.currentLocation?.id;
     if (!id) {
+      console.log('no id currentLocation');
       return null;
     }
-    return this.locationService.findLocation(id);
+    const data = await this.locationService.findLocations([id]);
+    return data[0];
+    console.log('this is another thing thats happening');
   }
-
-  // TODO: Can I pass array?
 
   @ResolveField('favoriteLocations', () => [Location], { nullable: true })
   async getFavoriteLocations(@Parent() user: User) {
@@ -55,12 +58,9 @@ export class UserResolver {
 
   @ResolveField('createdLocations', () => [Location], { nullable: true })
   async getCreatedLocations(@Parent() user: User) {
-    const id = user.createdLocations?.map((location) => location.id);
-    // const { id } = user;
-    // console.log('this is user: ', user);
-    // console.log('this is user.createdLocations: ', user.createdLocations);
-    // console.log('this is id: ', id);
-    return this.locationService.findLocations(id);
+    const ids = user.createdLocations.map((location) => location.id);
+    // console.log('this should be ids in createdLocations: ', ids);
+    return this.locationService.findLocations(ids);
   }
 
   // @ResolveField('createdAdventures', () => [AdventureRequest])
@@ -75,20 +75,29 @@ export class UserResolver {
   //   this.adventureRequestService.findAdventureRequest(id);
   // }
 
-  // @ResolveField('friends', () => [FriendRequest])
-  // async getFriends(@Parent() friendRequest: FriendRequest) {
-  //   const { id } = friendRequest;
-  //   this.friendRequestService.findFriendRequest(id);
-  // }
+  @ResolveField('friends', () => [FriendRequest])
+  async getFriends(
+    @Parent() friendRequest: FriendRequest,
+  ): Promise<FriendRequest[] | null> {
+    const { id } = friendRequest;
+    const data = await this.friendRequestService.findUserFiends(id);
+    // console.log('friends Field Resolver: ', data);
+    return data;
+  }
 
   @Query(() => [User], { name: 'allUsers' })
   async users() {
-    return this.userService.findUsers();
+    const data = await this.userService.findUsers();
+    // console.log('this is data in AllUSers: ', data);
+    return data;
   }
-  @Query(() => User, { name: 'user' })
-  async user(@Args('id', { type: () => Int }) id: number) {
+
+  // TODO - If I type it [User] I don't have to do data[0] change all if true
+
+  @Query(() => [User], { name: 'user' })
+  async oneUser(@Args('id', { type: () => Int }) id: number) {
     const data = await this.userService.find([id]);
-    console.log('this is data in user query: ', data);
+    // console.log('this is data in oneUser: ', data);
     return data;
   }
 
@@ -98,7 +107,7 @@ export class UserResolver {
     @Args('password') password: string,
     @Args('currentLocation', { nullable: true }) currentLocation?: number,
   ) {
-    return this.userService.createUser(name, password, currentLocation);
+    return await this.userService.createUser(name, password, currentLocation);
   }
 
   @Mutation(() => User, { name: 'updateUser' })
@@ -108,12 +117,25 @@ export class UserResolver {
     { id, name, password, currentLocation, favoriteLocations }: UpdateUserInput,
   ) {
     // console.log({ id, name, password, currentLocation });
+    let currentLocationObj;
+
+    if (currentLocation) {
+      currentLocationObj = await this.locationService.findLocations([
+        currentLocation,
+      ]);
+    }
     return this.userService.updateUser({
       id,
       name,
       password,
-      currentLocation,
+      currentLocationObj,
       favoriteLocations,
     });
+  }
+
+  @Mutation(() => Boolean, { name: 'deleteUser' })
+  async deleteUser(@Args('id', { type: () => Int }) id: number) {
+    this.userService.removeUser(id);
+    return true;
   }
 }
