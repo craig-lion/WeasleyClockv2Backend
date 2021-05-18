@@ -1,7 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Connection, Repository } from 'typeorm';
+import { Connection, Repository, Not, In } from 'typeorm';
 import { User } from './user.model';
+import { Location } from 'src/location/location.model';
+import { VerifiedUser } from './verifiedUser.model';
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const bcrypt = require('bcrypt');
 
 @Injectable()
 export class UserService {
@@ -11,19 +16,32 @@ export class UserService {
     private connection: Connection,
   ) {}
 
-  async findUsers(): Promise<User[]> {
-    // console.log('users', await this.usersRepository.find());
-    return this.usersRepository.find({
+  saltRounds = 10;
+  async findUsers(notTheseUsers?: Set<number>): Promise<User[]> {
+    // TODO - DO NOT RETURN PASSWORD
+    const options = {
       relations: [
         'currentLocation',
-        'createdLocations',
-        'favoriteLocations',
+        'locations',
+        // 'createdLocations',
+        // 'favoriteLocations',
         'friends',
       ],
-    });
+    };
+    if (notTheseUsers) {
+      const nameArray = Array.from(notTheseUsers);
+      (options['where'] = [
+        {
+          id: Not(In(nameArray)),
+        },
+      ]),
+        console.log('this is nameArray: ', nameArray);
+    }
+    return this.usersRepository.find(options);
   }
 
   async find(ids: number[]) {
+    console.log('userService');
     if (ids.length === 0) {
       console.log('check');
       throw new Error('Please Provide Ids');
@@ -34,8 +52,9 @@ export class UserService {
       }),
       relations: [
         'currentLocation',
-        'createdLocations',
-        'favoriteLocations',
+        'locations',
+        // 'createdLocations',
+        // 'favoriteLocations',
         'friends',
       ],
     };
@@ -44,13 +63,57 @@ export class UserService {
     // console.log('this is data: ', data);
     return data;
   }
-  async findByName(name: string) {
+
+  async findOne(id: number): Promise<User> {
     const options = {
-      where: { name },
-      relations: ['currentLocation', 'createdLocations', 'favoriteLocations'],
+      where: { id },
+      relations: ['currentLocation', 'locations', 'friends'],
     };
     console.log('this is options: ', options);
     const data = await this.usersRepository.find(options);
+    // console.log('data in userService findeOne: ', data);
+    return data[0];
+  }
+
+  async verifyUser(
+    name: string,
+    password: string,
+  ): Promise<VerifiedUser | null> {
+    const user = await this.findByName(name);
+    // console.log('this is user: ', user);
+
+    const passwordsDidMatch: boolean = await bcrypt.compare(
+      password,
+      user[0].password,
+    );
+
+    if (passwordsDidMatch) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password, ...rest } = user[0];
+      const verifiedUser: VerifiedUser = rest;
+      return verifiedUser;
+    }
+
+    return null;
+  }
+
+  // TODO - methods should return User not USer[]
+  async findByName(name: string): Promise<User[] | boolean> {
+    const options = {
+      where: { name },
+      relations: [
+        'currentLocation',
+        'locations',
+        // 'createdLocations',
+        // 'favoriteLocations',
+        'friends',
+      ],
+    };
+    // console.log('this is options: ', options);
+    // Find User
+    const data = await this.usersRepository.find(options);
+    // console.log('returned user in FindByname Pre Pass: ', data[0]);
+
     return data;
   }
 
@@ -58,12 +121,25 @@ export class UserService {
     await this.usersRepository.delete(id);
   }
 
-  async createUser(name, password, currentLocation) {
+  // TODO - currentLocation should be shaped as currentLocation.id = number
+  async createUser(
+    name: string,
+    password: string,
+    currentLocation,
+  ): Promise<User> {
     const queryRunner = this.connection.createQueryRunner();
     const user = new User();
     user.name = name;
-    user.password = password;
     user.currentLocation = currentLocation;
+
+    // await bcrypt.hash(password, this.saltRounds, (err, hash) => {
+    //   if (err) throw new Error('Problem Hashing Password');
+    //   console.log('this is hash: ', hash);
+    //   user.password = hash;
+    // });
+
+    const hashedPass = await bcrypt.hash(password, this.saltRounds);
+    user.password = hashedPass;
 
     console.log(user);
 
@@ -82,32 +158,50 @@ export class UserService {
       // you need to release a queryRunner which was manually instantiated
       await queryRunner.release();
     }
-    return `New User ${name} Created`;
+    return user;
   }
+  // TODO - type inputs properly
 
   async updateUser({
-    id,
-    name,
+    currentUser,
+    newName,
     password,
+    locationsArray,
     currentLocationObj,
-    favoriteLocations,
+    favoriteLocationsArray,
+  }: {
+    currentUser: number;
+    newName: string | undefined;
+    password: string | undefined;
+    locationsArray: Location[];
+    currentLocationObj: any;
+    favoriteLocationsArray: Location[];
   }) {
     const queryRunner = this.connection.createQueryRunner();
-    // console.log('this is id in updateUser: ', id);
-    const user = await this.find([id]);
+    console.log('this is id in updateUser: ', currentUser);
+    const user = await this.findOne(currentUser);
     console.log('user after find: ', user);
 
-    if (name) {
-      user[0].name = name;
+    if (newName) {
+      user.name = newName;
     }
     if (password) {
-      user[0].password = password;
+      bcrypt.hash(password, this.saltRounds, (err, hash) => {
+        if (err) throw new Error('Problem Hashing Password');
+        user.password = hash;
+      });
     }
     if (currentLocationObj) {
-      user[0].currentLocation = currentLocationObj[0];
+      // console.log('this is currentLocationObj: ', currentLocationObj);
+      user.currentLocation = currentLocationObj[0];
     }
-    if (favoriteLocations) {
-      user[0].favoriteLocations = favoriteLocations;
+    if (locationsArray) {
+      // console.log('this is locationsArrray: ', locationsArray);
+      user.locations = [...user.locations, ...locationsArray];
+    }
+    if (favoriteLocationsArray) {
+      // TODO - why is favorite locations not iterable?
+      // user.favoriteLocations = [...user.favoriteLocations, ...favoriteLocationsArray];
     }
 
     await queryRunner.connect();
@@ -117,7 +211,37 @@ export class UserService {
       await queryRunner.manager.save(user);
       await queryRunner.commitTransaction();
       // console.log('user after commit', user);
-      return user[0];
+      return user;
+    } catch (err) {
+      // if we have errors rollback the changes
+      await queryRunner.rollbackTransaction();
+    } finally {
+      // you need to release a queryRunner which was manually instantiated
+      await queryRunner.release();
+    }
+  }
+  async addLocationHelper({
+    currentUser,
+    location,
+  }: {
+    currentUser: number;
+    location: Location;
+  }) {
+    const queryRunner = this.connection.createQueryRunner();
+    console.log('this is id in updateUser: ', currentUser);
+    const user = await this.findOne(currentUser);
+    console.log('user after find: ', user);
+
+    user.locations = [...user.locations, location];
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      // console.log('user before save', user);
+      await queryRunner.manager.save(user);
+      await queryRunner.commitTransaction();
+      // console.log('user after commit', user);
+      return user;
     } catch (err) {
       // if we have errors rollback the changes
       await queryRunner.rollbackTransaction();

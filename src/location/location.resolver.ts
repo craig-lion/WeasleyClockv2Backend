@@ -11,10 +11,14 @@ import { Location } from 'src/location/location.model';
 import { LocationService } from '../location/location.service';
 import { Adventure } from 'src/adventure/adventure.model';
 import { AdventureService } from 'src/adventure/adventure.service';
-import { UpdateLocationArgs } from 'src/location/location-input.updateLocation';
+import { UpdateLocationInput } from 'src/location/location-input.updateLocation';
 import { User } from 'src/user/user.model';
 import { UserService } from 'src/user/user.service';
-import { CreateLocationArgs } from './location-input.createLocation';
+import { CreateLocationInput } from './location-input.createLocation';
+import { UseGuards } from '@nestjs/common';
+import { GqlAuthGuard } from 'src/auth/gql-auth.guard';
+import { CurrentUser } from 'src/auth/currentUser.decorator';
+import { VerifiedUser } from 'src/user/verifiedUser.model';
 
 //TODO: Can I name overall resolver and then simplify mutation names i.e. Location{mutation{update}}
 
@@ -32,20 +36,24 @@ export class LocationResolver {
     const data = await this.userService.find(ids);
     return data;
   }
+
   @ResolveField('createdBy', () => User)
   async getCreatedBy(@Parent() location: Location) {
     const id = location.createdBy.id;
     const data = await this.userService.find([id]);
+    // console.log('this is data in createdBy location resolver', data);
     return data[0];
   }
 
-  // @ResolveField('favoritedBy', () => [User], { nullable: true })
-  // async getCurrentLocation(@Parent() location: Location) {
-  //   // find and users where user.favoriteLocations.id matches location.id
-  //   const id = location.favoritedBy?.map((user) => user.id);
-  //   console.log('this is location in locationResolver: ', id);
-  //   return this.userService.find(id);
-  // }
+  @ResolveField('favoritedBy', () => [User], { nullable: true })
+  async getCurrentLocation(@Parent() location: Location) {
+    // find and users where user.favoriteLocations.id matches location.id
+    const id = location.favoritedBy.map((user) => user.id);
+    console.log('this is location in locationResolver: ', id);
+    const data = await this.userService.find(id);
+    console.log('this is data in locationResolver: ', data);
+    return data;
+  }
 
   @ResolveField('adventures', () => [Adventure], { nullable: true })
   async getAdventures(@Parent() location: Location) {
@@ -56,40 +64,54 @@ export class LocationResolver {
   }
 
   @Query(() => [Location], { name: 'allLocations' })
+  @UseGuards(new GqlAuthGuard())
   async locations() {
     const data = await this.locationService.allLocations();
-    // TODO -  Why is data loading in backend but null in graph for createdBy
-    console.log('data in Locations Query: ', data);
+    // console.log('data in Locations Query: ', data);
     return data;
   }
 
   @Query(() => Location, { name: 'Location' })
   async oneLocation(@Args('id', { type: () => Int }) id: number) {
     const data = await this.locationService.findLocations([id]);
-    console.log('data in locations resolver: ', data);
+    // console.log('data in locations resolver: ', data);
     // TODO - Same problem as all locations, createdBy shows in backend but not in graph
     return data[0];
   }
 
   @Mutation(() => Location, { name: 'createLocation' })
+  @UseGuards(new GqlAuthGuard())
   async createLocation(
-    @Args('createLocation')
-    { name, createdBy, privacy, lnglat }: CreateLocationArgs,
+    @CurrentUser() user: VerifiedUser,
+    @Args('createLocationInput')
+    { name, privacy, lnglat }: CreateLocationInput,
   ) {
-    const user = this.userService.find([createdBy]);
+    const createdBy = await this.userService.find([user.id]);
 
-    return this.locationService.createLocation({
+    const newLocation:
+      | Location
+      | undefined = await this.locationService.createLocation({
       name,
-      user,
+      user: createdBy,
       privacy,
       lnglat,
     });
+    // add new Location to user.locations
+    if (newLocation) {
+      await this.userService.addLocationHelper({
+        currentUser: user.id,
+        location: newLocation,
+      });
+      return newLocation;
+    } else {
+      throw new Error('Could not create new location');
+    }
   }
 
   @Mutation(() => Location, { name: 'updateLocation' })
   async updateLocation(
-    @Args()
-    { id, name, lnglat, privacy, favoritedBy }: UpdateLocationArgs,
+    @Args('updateLocationInput')
+    { id, name, lnglat, privacy, favoritedBy }: UpdateLocationInput,
   ) {
     return this.locationService.updateLocation({
       id,

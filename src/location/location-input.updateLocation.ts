@@ -1,11 +1,12 @@
-import { ArgsType, Field, Int } from '@nestjs/graphql';
+import { Field, InputType, Int } from '@nestjs/graphql';
 
-@ArgsType()
-export class UpdateLocationArgs {
+@InputType()
+export class UpdateLocationInput {
   @Field(() => Int) id: number;
   @Field({ nullable: true }) name?: string;
   @Field({ nullable: true }) lnglat?: string;
   @Field({ nullable: true }) privacy?: string;
   @Field(() => [Int], { nullable: true }) favoritedBy?: [number];
+  @Field(() => [Int], { nullable: true }) locations?: [number];
   // @Field(() => [Number], { nullable: true }) adventures?: [number];
 }

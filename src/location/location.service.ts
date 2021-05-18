@@ -13,7 +13,7 @@ export class LocationService {
 
   async findLocations(ids: number[]): Promise<Location[]> {
     if (ids.length === 0) {
-      console.log('this is what is happening');
+      // console.log('this is what is happening');
       return [];
     }
     const options = {
@@ -22,6 +22,7 @@ export class LocationService {
       }),
       relations: ['createdBy'],
     };
+    // console.log('this is options in findLocations locationService: ', options);
     const data = await this.locationsRepository.find(options);
     return data;
   }
@@ -43,11 +44,11 @@ export class LocationService {
     const queryRunner = this.connection.createQueryRunner();
     const location = new Location();
     location.name = name;
-    location.createdBy = user;
+    location.createdBy = user[0];
     location.createdOn = new Date();
     location.privacy = privacy || 'private';
     location.lnglat = lnglat || '37.773972, -122.431297';
-    location.favoritedBy = [user];
+    location.favoritedBy = [user[0]];
 
     console.log('this is location in createLocation', location);
 

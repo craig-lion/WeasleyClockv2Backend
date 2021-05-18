@@ -6,7 +6,6 @@ import {
   ManyToOne,
   ManyToMany,
   CreateDateColumn,
-  JoinTable,
 } from 'typeorm';
 import { ObjectType, Field, Int } from '@nestjs/graphql';
 import { Adventure } from 'src/adventure/adventure.model';
@@ -41,17 +40,12 @@ export class Location {
   @ManyToOne(() => User, (user) => user.createdLocations)
   createdBy: User;
 
-  @Field(() => User)
-  @ManyToOne(() => User, (user) => user.currentLocation)
+  @Field(() => User, { nullable: true })
+  @ManyToMany(() => User, (user) => user.locations)
   currentUsers: User[];
 
   @Field(() => [User], { nullable: true })
-  @ManyToMany(() => User)
-  @JoinTable({
-    name: 'user_favoriteLocations',
-    joinColumn: { name: 'locationId', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'userId', referencedColumnName: 'id' },
-  })
+  @ManyToMany(() => User, (user) => user.favoriteLocations)
   favoritedBy: User[];
 
   @Field(() => [Adventure], { nullable: true })

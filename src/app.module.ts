@@ -16,6 +16,7 @@ import { User } from './user/user.model';
 import { UserModule } from './user/user.module';
 import { ClientService } from './client/client.service';
 import { ClientMiddleware } from './client/client.middleware';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ClientMiddleware } from './client/client.middleware';
     LocationModule,
     AdventureModule,
     RequestsModule,
+    AuthModule,
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: 'weasleydb.cb6bf06bnvd1.us-west-1.rds.amazonaws.com',
@@ -37,9 +39,10 @@ import { ClientMiddleware } from './client/client.middleware';
     }),
     GraphQLModule.forRoot({
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
+      context: ({ req }) => ({ headers: req.headers }),
     }),
   ],
-  controllers: [AppController],
+  controllers: [AppController, ClientController],
   providers: [AppService, ClientService],
 })
 export class AppModule {

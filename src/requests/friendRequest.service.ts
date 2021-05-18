@@ -1,7 +1,26 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { UserService } from 'src/user/user.service';
+import { VerifiedUser } from 'src/user/verifiedUser.model';
 import { Connection, Repository } from 'typeorm';
 import { FriendRequest } from './friendRequest.model';
+import { UpdateFriendRequestData } from './friendRequest.resolver';
+
+interface CreatedBy {
+  name: string;
+}
+
+interface Recipient {
+  name: string;
+}
+
+export class QueryOptions {
+  relations: string[];
+  where?: {
+    createdBy: CreatedBy;
+    recipient: Recipient;
+  };
+}
 
 @Injectable()
 export class FriendRequestService {
@@ -9,17 +28,50 @@ export class FriendRequestService {
     @InjectRepository(FriendRequest)
     private friendRequestRepository: Repository<FriendRequest>,
     private connection: Connection,
+    private userService: UserService,
   ) {}
 
   async findAll(): Promise<FriendRequest[]> {
-    const data = await this.friendRequestRepository.find({
+    const options = {
       relations: ['createdBy', 'recipient'],
-    });
+    };
+    console.log('this is options in findAll friendRequestResolver: ', options);
+    const data = await this.friendRequestRepository.find(options);
     // console.log('data in findAllFriendRequests: ', data);
     return data;
   }
 
-  async find(ids: number[]) {
+  async findUserRequests(id: number): Promise<FriendRequest[]> {
+    const options = {
+      where: [{ recipient: { id } }, { createdBy: { id } }],
+      relations: ['createdBy', 'recipient'],
+    };
+    // console.log('this is options: ', options.where);
+    const data = await this.friendRequestRepository.find(options);
+    console.log('data in findUserRequests: ', data.length);
+    return data;
+  }
+
+  async findOneRequest(
+    createdById: number,
+    recipientId: number,
+  ): Promise<FriendRequest> {
+    const options = {
+      where: [
+        { recipient: { id: recipientId } },
+        { createdBy: { id: createdById } },
+      ],
+      relations: ['createdBy', 'recipient'],
+    };
+    const findOneRequestData: FriendRequest[] = await this.friendRequestRepository.find(
+      options,
+    );
+
+    return findOneRequestData[0];
+  }
+
+  async find(ids: number[]): Promise<FriendRequest[]> {
+    console.log('friendRequest');
     if (ids.length === 0) {
       throw new Error('Please Provide Ids');
     }
@@ -29,20 +81,42 @@ export class FriendRequestService {
       }),
       relations: ['createdBy', 'recipient'],
     };
-    // console.log('this is options: ', options);
+    console.log('this is options: ', options);
     const data = await this.friendRequestRepository.find(options);
-    // console.log('data in friendRequestFind: ', data);
+    console.log('data in friendRequestFind: ', data);
     return data;
   }
 
-  async findUserFiends(id: number): Promise<FriendRequest[] | null> {
+  async findPendingFriendsByName(
+    name: string,
+  ): Promise<FriendRequest[] | null> {
     const options = {
-      where: [{ recipient: { id } }, { createdBy: { id } }],
+      where: [
+        { recipient: { name } },
+        { createdBy: { name } },
+        { status: 'pending' },
+      ],
       relations: ['createdBy', 'recipient'],
     };
-    console.log('this is options: ', options.where);
+    // console.log('this is options: ', options.where);
     const data = await this.friendRequestRepository.find(options);
-    console.log('data in findUserFriends: ', data);
+    // console.log('data in findUserFriends: ', data);
+    return data;
+  }
+
+  // TODO - Probalby should use name for all service methods instead of id
+  async findFriendsByName(name: string): Promise<FriendRequest[] | null> {
+    const options = {
+      where: [
+        { recipient: { name } },
+        { createdBy: { name } },
+        { status: 'accepted' },
+      ],
+      relations: ['createdBy', 'recipient'],
+    };
+    // console.log('this is options: ', options.where);
+    const data = await this.friendRequestRepository.find(options);
+    // console.log('data in findUserFriends: ', data);
     return data;
   }
 
@@ -50,11 +124,19 @@ export class FriendRequestService {
     await this.friendRequestRepository.delete(id);
   }
 
-  async createFriendRequest({ createdBy, recipient }): Promise<FriendRequest> {
+  async createFriendRequest({
+    user,
+    recipient,
+  }: {
+    user: VerifiedUser;
+    recipient: number;
+  }): Promise<FriendRequest> {
     const queryRunner = this.connection.createQueryRunner();
     const friendRequest = new FriendRequest();
-    friendRequest.createdBy = createdBy;
-    friendRequest.recipient = recipient;
+    const creatorUser = await this.userService.findOne(user.id);
+    const recieverUser = await this.userService.findOne(recipient);
+    friendRequest.createdBy = creatorUser;
+    friendRequest.recipient = recieverUser;
     friendRequest.createdOn = new Date();
     friendRequest.status = 'pending';
 
@@ -76,13 +158,17 @@ export class FriendRequestService {
     }
   }
 
-  async updateFriendRequest({ id, status }): Promise<FriendRequest> {
+  async updateFriendRequest(
+    updateFriendRequestData: UpdateFriendRequestData,
+  ): Promise<FriendRequest> {
+    const { userId, recipientId, status } = updateFriendRequestData;
     const queryRunner = this.connection.createQueryRunner();
-    const friendRequest = await this.find([id]);
-    const newRequest = friendRequest[0];
-
-    newRequest.id = id;
+    const friendRequest = await this.findOneRequest(userId, recipientId);
+    const newRequest = friendRequest;
     newRequest.status = status;
+    if (status === 'accepted') {
+      newRequest.acceptedOn = new Date();
+    }
 
     await queryRunner.connect();
     await queryRunner.startTransaction();

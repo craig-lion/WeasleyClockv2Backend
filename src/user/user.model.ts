@@ -35,19 +35,23 @@ export class User {
   @ManyToOne(() => Location, (location) => location.currentUsers)
   currentLocation: Location;
 
-  // @Field(() => [Location], { nullable: true })
-  // @ManyToMany(() => Location)
-  // @JoinTable()
-  // favoriteLocations?: Location[];
+  @Field(() => [Location], { nullable: true })
+  @ManyToMany(() => Location, (location) => location.currentUsers)
+  @JoinTable({
+    name: 'user_locations',
+    joinColumn: { name: 'userId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'locationId', referencedColumnName: 'id' },
+  })
+  locations: Location[];
 
   @Field(() => [Location], { nullable: true })
-  @ManyToMany(() => Location, { cascade: true })
+  @ManyToMany(() => Location, (location) => location.favoritedBy)
   @JoinTable({
     name: 'user_favoriteLocations',
     joinColumn: { name: 'userId', referencedColumnName: 'id' },
     inverseJoinColumn: { name: 'locationId', referencedColumnName: 'id' },
   })
-  favoriteLocations?: Location[];
+  favoriteLocations: Location[];
 
   // make sure created Locations can be empty but always at least returns emptry array
 
@@ -57,7 +61,7 @@ export class User {
 
   @Field(() => [Adventure], { nullable: true })
   @OneToMany(() => Adventure, (adventure) => adventure.createdBy)
-  createdAdventures?: Adventure[];
+  createdAdventures: Adventure[];
 
   @Field(() => [AdventureRequest], { nullable: true })
   @OneToMany(
@@ -68,5 +72,5 @@ export class User {
 
   @Field(() => [FriendRequest], { nullable: true })
   @OneToMany(() => FriendRequest, (friendRequest) => friendRequest.recipient)
-  friends?: FriendRequest[];
+  friends: FriendRequest[];
 }

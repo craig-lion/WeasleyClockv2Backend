@@ -17,6 +17,11 @@ export class FriendRequest {
   @Column()
   createdOn: Date;
 
+  //TODO - in models nullable must be on @column
+  @Field(() => Date)
+  @Column({ nullable: true })
+  acceptedOn: Date;
+
   @Field(() => String)
   @Column()
   status: 'pending' | 'accepted' | 'rejected';

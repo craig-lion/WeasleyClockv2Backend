@@ -32,6 +32,7 @@ type FriendRequest {
   id: Int!
   createdBy: User!
   createdOn: DateTime!
+  acceptedOn: DateTime!
   status: String!
   recipient: User!
 }
@@ -41,11 +42,12 @@ type User {
   name: String!
   password: String!
   currentLocation: Location
+  locations: [Location!]
   favoriteLocations: [Location!]
   createdLocations: [Location!]
   createdAdventures: [Adventure!]
   adventures: [AdventureRequest!]
-  friends: [FriendRequest!]!
+  friends: FriendRequestData!
 }
 
 type Adventure {
@@ -59,38 +61,59 @@ type Adventure {
   requests: AdventureRequest
 }
 
+type DataToken {
+  token: String!
+}
+
+type FriendRequestData {
+  accepted: [User!]
+  pending: [User!]
+  rejected: [User!]
+}
+
 type Query {
   allUsers: [User!]!
-  user(id: Int!): [User!]!
+  user: [User!]!
+  userNotFriends: [User!]!
+  me: User!
   allLocations: [Location!]!
   Location(id: Int!): Location!
   allAdventures: [Adventure!]!
   Adventure(id: Int!): Adventure!
-  AllFriendRequests: [FriendRequest!]!
-  FriendRequest(id: Int!): FriendRequest!
+  allFriendRequests: [FriendRequest!]!
+  userfriendRequests: FriendRequestData!
   AllAdventureRequests: [AdventureRequest!]!
   AdventureRequest(id: Int!): AdventureRequest!
 }
 
 type Mutation {
+  login(password: String!, name: String!): DataToken!
   createUser(currentLocation: Float, password: String!, name: String!): User!
-  updateUser(id: Int!, name: String, password: String, currentLocation: Int, favoriteLocations: [Int!]): User!
+  updateUser(name: String, password: String, locations: [Int!], currentLocation: Int, favoriteLocations: [Int!], id: Int!): User!
   deleteUser(id: Int!): Boolean!
-  createLocation(createLocation: CreateLocationArgs!): Location!
-  updateLocation(id: Int!, name: String, lnglat: String, privacy: String, favoritedBy: [Int!]): Location!
+  createLocation(createLocationInput: CreateLocationInput!): Location!
+  updateLocation(updateLocationInput: UpdateLocationInput!): Location!
   createAdventure(createAdventure: CreateAdventureArgs!): Adventure!
   updateAdventure(adventure: UpdateAdventureArgs!): Adventure!
-  createFriendRequest(createFriendRequest: CreateFriendRequestArgs!): FriendRequest!
-  updateFriendRequest(updateFriendRequest: UpdateFriendRequestArgs!): FriendRequest!
+  createFriendRequest(createFriendRequestInput: CreateFriendRequestInput!): FriendRequest!
+  updateFriendRequest(updateFriendRequestInput: UpdateFriendRequestInput!): FriendRequest!
   createAdventureRequest(createAdventureRequest: CreateAdventureRequestArgs!): AdventureRequest!
   updateAdventureRequest(updateAdventureRequest: UpdateAdventureRequestArgs!): AdventureRequest!
 }
 
-input CreateLocationArgs {
+input CreateLocationInput {
   name: String!
-  createdBy: Int!
   lnglat: String
   privacy: String
+}
+
+input UpdateLocationInput {
+  id: Int!
+  name: String
+  lnglat: String
+  privacy: String
+  favoritedBy: [Int!]
+  locations: [Int!]
 }
 
 input CreateAdventureArgs {
@@ -109,12 +132,11 @@ input UpdateAdventureArgs {
   location: Int!
 }
 
-input CreateFriendRequestArgs {
-  createdBy: Int!
-  recipient: Int!
+input CreateFriendRequestInput {
+  recipient: Float!
 }
 
-input UpdateFriendRequestArgs {
+input UpdateFriendRequestInput {
   id: Int!
   status: String!
 }
