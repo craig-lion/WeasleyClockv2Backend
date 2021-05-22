@@ -6,7 +6,6 @@ import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
-// console.log('Secret', process.env.SECRET);
 @Module({
   imports: [
     ConfigModule,
@@ -20,10 +19,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         signOptions: { expiresIn: '60000s' },
       }),
     }),
-    // JwtModule.register({
-    //   secret: jwtConstants.secret,
-    //   signOptions: { expiresIn: '60000s' },
-    // }),
   ],
   providers: [
     AuthService,
