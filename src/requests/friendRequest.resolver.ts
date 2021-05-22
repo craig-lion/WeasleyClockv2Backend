@@ -1,4 +1,3 @@
-import { UseGuards } from '@nestjs/common';
 import {
   Resolver,
   Query,
@@ -8,7 +7,6 @@ import {
   Parent,
 } from '@nestjs/graphql';
 import { CurrentUser } from 'src/auth/currentUser.decorator';
-import { GqlAuthGuard } from 'src/auth/gql-auth.guard';
 import { User } from 'src/user/user.model';
 import { UserService } from 'src/user/user.service';
 import { VerifiedUser } from 'src/user/verifiedUser.model';
@@ -64,7 +62,6 @@ export class FriendRequestResolver {
 
   // TODO - Replace Name Args with user.name from context
   @Query(() => FriendRequestData, { name: 'userfriendRequests' })
-  @UseGuards(new GqlAuthGuard())
   async oneUserFriendRequests(
     @CurrentUser() user: VerifiedUser,
   ): Promise<FriendRequestData | null> {
@@ -129,7 +126,6 @@ export class FriendRequestResolver {
   }
 
   @Mutation(() => FriendRequest, { name: 'createFriendRequest' })
-  @UseGuards(new GqlAuthGuard())
   async createFriendRequest(
     @CurrentUser() user: VerifiedUser,
     @Args('createFriendRequestInput')
@@ -144,7 +140,6 @@ export class FriendRequestResolver {
   }
 
   @Mutation(() => FriendRequest, { name: 'updateFriendRequest' })
-  @UseGuards(new GqlAuthGuard())
   async updateFriendRequest(
     @CurrentUser() user: VerifiedUser,
     @Args('updateFriendRequestInput')

@@ -17,6 +17,8 @@ import { UserModule } from './user/user.module';
 import { ClientService } from './client/client.service';
 import { ClientMiddleware } from './client/client.middleware';
 import { AuthModule } from './auth/auth.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+// console.log('looking for secret: ', process.env);
 
 @Module({
   imports: [
@@ -25,17 +27,24 @@ import { AuthModule } from './auth/auth.module';
     AdventureModule,
     RequestsModule,
     AuthModule,
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'weasleydb.cb6bf06bnvd1.us-west-1.rds.amazonaws.com',
-      port: 5432,
-      username: 'lion',
-      password: 'dumxAb-netwod-7sosza',
-      database: 'weasleydb',
-      entities: [User, Location, Adventure, FriendRequest, AdventureRequest],
-      synchronize: true,
-      dropSchema: false,
-      logging: false,
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        type: 'postgres',
+        host: 'weasleydb.cb6bf06bnvd1.us-west-1.rds.amazonaws.com',
+        port: 5432,
+        username: configService.get<string>('DATABASE_USER'),
+        password: configService.get<string>('DATABASE_PASSWORD'),
+        database: configService.get<string>('DATABASE_NAME'),
+        entities: [User, Location, Adventure, FriendRequest, AdventureRequest],
+        synchronize: true,
+        dropSchema: false,
+        logging: false,
+      }),
     }),
     GraphQLModule.forRoot({
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),

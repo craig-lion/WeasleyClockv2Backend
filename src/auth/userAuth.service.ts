@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { User } from '../user/user.model';
 import { VerifiedUser } from 'src/user/verifiedUser.model';
 import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import bcrypt from 'bcrypt';
 
 export class JwtToken {
@@ -14,6 +14,7 @@ export class AuthService {
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
+    private configService: ConfigService,
   ) {}
 
   async validateUser(
@@ -40,9 +41,12 @@ export class AuthService {
   }
 
   async createToken(verifiedUser: VerifiedUser) {
-    console.log('this is verifiedUser in createToken: ', verifiedUser);
     return {
       token: this.jwtService.sign(verifiedUser),
     };
+  }
+
+  async getSecret() {
+    return this.configService.get('SECRET');
   }
 }

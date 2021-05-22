@@ -3,26 +3,33 @@ import { AuthService } from './userAuth.service';
 import { UserModule } from 'src/user/user.module';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
-// import { LocalStrategy } from './local.strategy';
-import { jwtConstants } from './constants';
-// import { GqlAuthGuard } from './gql-auth.guard';
 import { JwtStrategy } from './jwt.strategy';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
+// console.log('Secret', process.env.SECRET);
 @Module({
   imports: [
+    ConfigModule,
     forwardRef(() => UserModule),
     PassportModule,
-    JwtModule.register({
-      secret: jwtConstants.secret,
-      signOptions: { expiresIn: '60000s' },
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('SECRET'),
+        signOptions: { expiresIn: '60000s' },
+      }),
     }),
+    // JwtModule.register({
+    //   secret: jwtConstants.secret,
+    //   signOptions: { expiresIn: '60000s' },
+    // }),
   ],
   providers: [
     AuthService,
-    // LocalStrategy,
     JwtStrategy,
     // {
-    //   provide: 'APP_GUARD',
+    //   provide: APP_GUARD,
     //   useClass: GqlAuthGuard,
     // },
   ],

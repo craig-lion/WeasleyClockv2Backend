@@ -15,8 +15,6 @@ import { UpdateLocationInput } from 'src/location/location-input.updateLocation'
 import { User } from 'src/user/user.model';
 import { UserService } from 'src/user/user.service';
 import { CreateLocationInput } from './location-input.createLocation';
-import { UseGuards } from '@nestjs/common';
-import { GqlAuthGuard } from 'src/auth/gql-auth.guard';
 import { CurrentUser } from 'src/auth/currentUser.decorator';
 import { VerifiedUser } from 'src/user/verifiedUser.model';
 
@@ -64,7 +62,6 @@ export class LocationResolver {
   }
 
   @Query(() => [Location], { name: 'allLocations' })
-  @UseGuards(new GqlAuthGuard())
   async locations() {
     const data = await this.locationService.allLocations();
     // console.log('data in Locations Query: ', data);
@@ -80,7 +77,6 @@ export class LocationResolver {
   }
 
   @Mutation(() => Location, { name: 'createLocation' })
-  @UseGuards(new GqlAuthGuard())
   async createLocation(
     @CurrentUser() user: VerifiedUser,
     @Args('createLocationInput')

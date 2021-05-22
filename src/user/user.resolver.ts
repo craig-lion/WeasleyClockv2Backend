@@ -15,15 +15,14 @@ import { User } from './user.model';
 import { UserService } from './user.service';
 // import { AdventureRequestService } from '../requests/adventureRequest.service';
 import { FriendRequestService } from 'src/requests/friendRequest.service';
-import { UseGuards } from '@nestjs/common';
-import { GqlAuthGuard } from 'src/auth/gql-auth.guard';
 import { CurrentUser } from 'src/auth/currentUser.decorator';
 import { AuthService } from 'src/auth/userAuth.service';
 import { VerifiedUser } from './verifiedUser.model';
-// import { JwtToken } from 'src/auth/userAuth.service';
 import { DataToken } from 'src/auth/user.DataToken';
 import { FriendRequestData } from 'src/requests/friendRequestData.model';
 import { FriendRequest } from 'src/requests/friendRequest.model';
+import { ConfigService } from '@nestjs/config';
+import { Public } from 'src/auth/publicRoute.decorator';
 
 //TODO: Can I name overall resolver and then simplify mutation names i.e. user{mutation{update}}
 
@@ -34,6 +33,7 @@ export class UserResolver {
     private locationService: LocationService, // private adventureRequestService: AdventureRequestService,
     private friendRequestService: FriendRequestService,
     private authService: AuthService,
+    private configService: ConfigService,
   ) {}
 
   @ResolveField('currentLocation', () => Location, { nullable: true })
@@ -46,7 +46,6 @@ export class UserResolver {
     }
     const data = await this.locationService.findLocations([id]);
     return data[0];
-    console.log('this is another thing thats happening');
   }
 
   @ResolveField('locations', () => [Location], { nullable: true })
@@ -159,7 +158,6 @@ export class UserResolver {
         }
       });
       const rejectedData: User[] = await this.userService.find(rejectedIds);
-
       friendsData.rejected = rejectedData;
     }
     return friendsData;
@@ -175,17 +173,13 @@ export class UserResolver {
   // TODO - If I type it [User] I don't have to do data[0] change all if true
 
   @Query(() => [User], { name: 'user' })
-  @UseGuards(new GqlAuthGuard())
-  async oneUser(@CurrentUser() user: VerifiedUser) {
+  async oneUser(@CurrentUser() user: User) {
     // TODO - Route should access currentUser and get name from there
-    // console.log('this is name from context: ', user);
     const data = await this.userService.findByName(user.name);
-    // console.log('this is data in oneUser: ', data);
     return data;
   }
 
   @Query(() => [User], { name: 'userNotFriends' })
-  @UseGuards(new GqlAuthGuard())
   async userNotFriends(@CurrentUser() user: VerifiedUser) {
     // Get All FriendRequests
     const requests: FriendRequest[] = await this.friendRequestService.findUserRequests(
@@ -200,41 +194,29 @@ export class UserResolver {
         nameSet.add(friendRequest.recipient.id)
       ),
     );
-    // requests.forEach((friendRequest) => console.log('friendRequest'));
     // Search for all users where name is not in nameSet
-    // console.log('this is nameSet in user.resolver userNotFriends: ', nameSet);
     const data: User[] = await this.userService.findUsers(nameSet);
-    // console.log('this is data in userNotFriends userResolver: ', data);
 
     return data;
   }
 
   @Query(() => User)
-  @UseGuards(new GqlAuthGuard())
-  me(
-    @CurrentUser() user: VerifiedUser,
-    // @ValidatedUser() validatedUser: User
-  ) {
+  me(@CurrentUser() user: VerifiedUser) {
     console.log('this is me: ', user);
-    // console.log('no THIS is me: ', validatedUser);
     return user;
   }
 
-  // Login handler - check for user, if does not exist create
   @Mutation(() => DataToken, { name: 'login' })
+  @Public()
   async login(
     @Args('name') name: string,
     @Args('password') password: string,
   ): Promise<DataToken | string> {
-    // Instead of findByName call userSerice.validateUser which should return a userObj
     const verifiedUser: VerifiedUser | null = await this.userService.verifyUser(
       name,
       password,
     );
-    // console.log('this is verifiedUSer in userResolver: ', verifiedUser);
-    // If !user then create a new user
     if (!verifiedUser) {
-      // return error or string or something then alert on frontend
       return `Login Failed`;
     } else {
       const data: DataToken = await this.authService.createToken(verifiedUser);
@@ -252,7 +234,7 @@ export class UserResolver {
   }
 
   @Mutation(() => User, { name: 'updateUser' })
-  @UseGuards(new GqlAuthGuard())
+  // @UseGuards(new GqlAuthGuard())
   async updateUser(
     // TODO: should be UpdateUserArgs
     // TODO: update user should get user.id from context
