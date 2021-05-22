@@ -9,6 +9,6 @@ async function bootstrap() {
   const secret = configService.get('SECRET');
   const reflector: Reflector = app.get(Reflector);
   app.useGlobalGuards(new GqlAuthGuard(secret, reflector));
-  await app.listen(3000);
+  await app.listen(process.env.PORT || 3000);
 }
 bootstrap();
