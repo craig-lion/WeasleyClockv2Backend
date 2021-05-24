@@ -8,7 +8,11 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const secret = configService.get('SECRET');
   const reflector: Reflector = app.get(Reflector);
+  const port = configService.get('PORT');
+  const test = process.env.PORT;
+  console.log('this is process.env: ', test);
+  console.log('this is port: ', port);
   app.useGlobalGuards(new GqlAuthGuard(secret, reflector));
-  await app.listen(process.env.PORT || 3000);
+  await app.listen(port || 3000);
 }
 bootstrap();
