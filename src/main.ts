@@ -12,6 +12,7 @@ async function bootstrap() {
   const test = process.env.PORT;
   console.log('this is process.env: ', test);
   console.log('this is port: ', port);
+  console.log('secret')
   app.useGlobalGuards(new GqlAuthGuard(secret, reflector));
   await app.listen(port || 3000);
 }
