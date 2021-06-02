@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { join } from 'path';
@@ -6,7 +6,6 @@ import { Adventure } from './adventure/adventure.model';
 import { AdventureModule } from './adventure/adventure.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ClientController } from './client/client.controller';
 import { Location } from './location/location.model';
 import { LocationModule } from './location/location.module';
 import { AdventureRequest } from './requests/adventureRequest.model';
@@ -14,14 +13,13 @@ import { FriendRequest } from './requests/friendRequest.model';
 import { RequestsModule } from './requests/requests.module';
 import { User } from './user/user.model';
 import { UserModule } from './user/user.module';
-import { ClientService } from './client/client.service';
-import { ClientMiddleware } from './client/client.middleware';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as fs from 'file-system';
 import { ServeStaticModule } from '@nestjs/serve-static';
 
 // console.log('looking for secret: ', process.env);
+console.log('join: ', join(__dirname, '..', 'client'));
 
 @Module({
   imports: [
@@ -32,6 +30,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
     AuthModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'client'),
+      exclude: ['/graphql'],
     }),
     ConfigModule.forRoot({
       isGlobal: true,
@@ -49,7 +48,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
         entities: [User, Location, Adventure, FriendRequest, AdventureRequest],
         synchronize: true,
         dropSchema: false,
-        logging: true,
+        logging: false,
         connectTimeoutMS: 20000,
         ssl: {
           ca: fs
@@ -63,11 +62,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
       context: ({ req }) => ({ headers: req.headers }),
     }),
   ],
-  controllers: [AppController, ClientController],
-  providers: [AppService, ClientService],
+  controllers: [AppController],
+  providers: [AppService],
 })
-export class AppModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(ClientMiddleware).forRoutes(ClientController);
-  }
-}
+export class AppModule {}

@@ -1,5 +1,4 @@
 import { Controller, Post, UseGuards, Request } from '@nestjs/common';
-import { LocalAuthGuard } from './auth/local-auth.guard';
 import { AuthService } from './auth/userAuth.service';
 
 //TODO Possibly delete this file
