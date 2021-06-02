@@ -19,6 +19,7 @@ import { ClientMiddleware } from './client/client.middleware';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as fs from 'file-system';
+import { ServeStaticModule } from '@nestjs/serve-static';
 
 // console.log('looking for secret: ', process.env);
 
@@ -29,6 +30,9 @@ import * as fs from 'file-system';
     AdventureModule,
     RequestsModule,
     AuthModule,
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'client'),
+    }),
     ConfigModule.forRoot({
       isGlobal: true,
     }),
