@@ -18,6 +18,8 @@ import { ClientService } from './client/client.service';
 import { ClientMiddleware } from './client/client.middleware';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import * as fs from 'file-system';
+
 // console.log('looking for secret: ', process.env);
 
 @Module({
@@ -43,7 +45,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         entities: [User, Location, Adventure, FriendRequest, AdventureRequest],
         synchronize: true,
         dropSchema: false,
-        logging: false,
+        logging: true,
+        connectTimeoutMS: 20000,
+        ssl: {
+          ca: fs
+            .readFileSync('src/config/certs/rds-ca-2019-root.pem')
+            .toString(),
+        },
       }),
     }),
     GraphQLModule.forRoot({
