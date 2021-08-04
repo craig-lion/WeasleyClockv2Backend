@@ -19,7 +19,7 @@ import * as fs from 'file-system';
 import { ServeStaticModule } from '@nestjs/serve-static';
 
 // console.log('looking for secret: ', process.env);
-console.log('join: ', join(__dirname, '..', 'client'));
+console.log('join: ', join(__dirname, '..', 'build'));
 
 @Module({
   imports: [
@@ -29,7 +29,7 @@ console.log('join: ', join(__dirname, '..', 'client'));
     RequestsModule,
     AuthModule,
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'client'),
+      rootPath: join(__dirname, '..', 'build'),
       exclude: ['/graphql'],
     }),
     ConfigModule.forRoot({

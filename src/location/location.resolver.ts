@@ -16,7 +16,6 @@ import { User } from 'src/user/user.model';
 import { UserService } from 'src/user/user.service';
 import { CreateLocationInput } from './location-input.createLocation';
 import { CurrentUser } from 'src/auth/currentUser.decorator';
-import { VerifiedUser } from 'src/user/verifiedUser.model';
 
 //TODO: Can I name overall resolver and then simplify mutation names i.e. Location{mutation{update}}
 
@@ -68,6 +67,25 @@ export class LocationResolver {
     return data;
   }
 
+  @Query(() => [Location], { name: 'nonUserOwnedLocations' })
+  async nonUserOwnedLocations(@CurrentUser() user: User) {
+    // get userLocations
+    const userLocations: Location[] = [...user.locations];
+    // get AllLocations
+    const allLocations: Location[] = await this.locationService.allLocations();
+    // filter out userLocations
+    const locationArray: Location[] = [];
+    allLocations.forEach((location) => {
+      if (
+        !userLocations.some((userLocation) => location.id === userLocation.id)
+      ) {
+        locationArray.push(location);
+      }
+    });
+    // return remaining loations
+    return locationArray;
+  }
+
   @Query(() => Location, { name: 'Location' })
   async oneLocation(@Args('id', { type: () => Int }) id: number) {
     const data = await this.locationService.findLocations([id]);
@@ -78,7 +96,7 @@ export class LocationResolver {
 
   @Mutation(() => Location, { name: 'createLocation' })
   async createLocation(
-    @CurrentUser() user: VerifiedUser,
+    @CurrentUser() user: User,
     @Args('createLocationInput')
     { name, privacy, lnglat }: CreateLocationInput,
   ) {

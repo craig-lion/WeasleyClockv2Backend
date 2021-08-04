@@ -89,7 +89,7 @@ type Query {
 type Mutation {
   login(password: String!, name: String!): DataToken!
   createUser(currentLocation: Float, password: String!, name: String!): User!
-  updateUser(name: String, password: String, locations: [Int!], currentLocation: Int, favoriteLocations: [Int!], id: Int!): User!
+  updateUser(updateUserInput: UpdateUserInput!): User!
   deleteUser(id: Int!): Boolean!
   createLocation(createLocationInput: CreateLocationInput!): Location!
   updateLocation(updateLocationInput: UpdateLocationInput!): Location!
@@ -99,6 +99,14 @@ type Mutation {
   updateFriendRequest(updateFriendRequestInput: UpdateFriendRequestInput!): FriendRequest!
   createAdventureRequest(createAdventureRequest: CreateAdventureRequestArgs!): AdventureRequest!
   updateAdventureRequest(updateAdventureRequest: UpdateAdventureRequestArgs!): AdventureRequest!
+}
+
+input UpdateUserInput {
+  name: String
+  password: String
+  locations: [Int!]
+  currentLocation: Int
+  favoriteLocations: [Int!]
 }
 
 input CreateLocationInput {

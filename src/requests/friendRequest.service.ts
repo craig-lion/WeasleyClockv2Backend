@@ -35,7 +35,7 @@ export class FriendRequestService {
     const options = {
       relations: ['createdBy', 'recipient'],
     };
-    console.log('this is options in findAll friendRequestResolver: ', options);
+    // console.log('this is options in findAll friendRequestResolver: ', options);
     const data = await this.friendRequestRepository.find(options);
     // console.log('data in findAllFriendRequests: ', data);
     return data;
@@ -48,7 +48,7 @@ export class FriendRequestService {
     };
     // console.log('this is options: ', options.where);
     const data = await this.friendRequestRepository.find(options);
-    console.log('data in findUserRequests: ', data.length);
+    // console.log('data in findUserRequests: ', data.length);
     return data;
   }
 

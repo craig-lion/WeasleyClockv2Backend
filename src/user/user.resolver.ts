@@ -56,7 +56,7 @@ export class UserResolver {
     //   'user.map: ',
     //   user.favoriteLocations.map((location) => console.log(location)),
     // );
-    console.log('this is ids: ', ids);
+    // console.log('this is ids: ', ids);
     // console.log('this is type of id: ', typeof id);
     // console.log(
     //   'this is user.favoriteLocations: ',
@@ -175,6 +175,7 @@ export class UserResolver {
   @Query(() => [User], { name: 'user' })
   async oneUser(@CurrentUser() user: User) {
     // TODO - Route should access currentUser and get name from there
+    console.log('this is oneUser: ', user);
     const data = await this.userService.findByName(user.name);
     return data;
   }
@@ -239,8 +240,7 @@ export class UserResolver {
     // TODO: should be UpdateUserArgs
     // TODO: update user should get user.id from context
     @CurrentUser() user: VerifiedUser,
-    @Args('id', { type: () => Int }) id: number,
-    @Args()
+    @Args('updateUserInput')
     {
       name,
       password,
@@ -267,7 +267,7 @@ export class UserResolver {
       );
     }
     return this.userService.updateUser({
-      currentUser: id,
+      currentUser: user.id,
       newName: name,
       password,
       locationsArray,

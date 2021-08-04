@@ -40,8 +40,7 @@ export class UserService {
     return this.usersRepository.find(options);
   }
 
-  async find(ids: number[]) {
-    console.log('userService');
+  async find(ids: number[]): Promise<User[]> {
     if (ids.length === 0) {
       console.log('check');
       throw new Error('Please Provide Ids');
