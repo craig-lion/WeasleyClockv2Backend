@@ -68,7 +68,7 @@ export class UserService {
       where: { id },
       relations: ['currentLocation', 'locations', 'friends'],
     };
-    console.log('this is options: ', options);
+    // console.log('this is options: ', options);
     const data = await this.usersRepository.find(options);
     // console.log('data in userService findeOne: ', data);
     return data[0];
@@ -176,10 +176,11 @@ export class UserService {
     currentLocationObj: any;
     favoriteLocationsArray: Location[];
   }) {
+    console.log('locationsArray in userService: ', locationsArray);
     const queryRunner = this.connection.createQueryRunner();
-    console.log('this is id in updateUser: ', currentUser);
+    // console.log('this is id in updateUser: ', currentUser);
     const user = await this.findOne(currentUser);
-    console.log('user after find: ', user);
+    // console.log('user after find: ', user);
 
     if (newName) {
       user.name = newName;
@@ -196,7 +197,7 @@ export class UserService {
     }
     if (locationsArray) {
       // console.log('this is locationsArrray: ', locationsArray);
-      user.locations = [...user.locations, ...locationsArray];
+      user.locations = [...locationsArray];
     }
     if (favoriteLocationsArray) {
       // TODO - why is favorite locations not iterable?
@@ -225,7 +226,7 @@ export class UserService {
   }: {
     currentUser: number;
     location: Location;
-  }) {
+  }): Promise<Location> {
     const queryRunner = this.connection.createQueryRunner();
     console.log('this is id in updateUser: ', currentUser);
     const user = await this.findOne(currentUser);
@@ -240,13 +241,14 @@ export class UserService {
       await queryRunner.manager.save(user);
       await queryRunner.commitTransaction();
       // console.log('user after commit', user);
-      return user;
     } catch (err) {
       // if we have errors rollback the changes
       await queryRunner.rollbackTransaction();
+      console.log('Problem Updating Locations: ', err);
     } finally {
       // you need to release a queryRunner which was manually instantiated
       await queryRunner.release();
+      return location;
     }
   }
 }

@@ -14,7 +14,7 @@ import { CreateFriendRequestInput } from './friendRequest-input.createFriendRequ
 import { UpdateFriendRequestInput } from './friendRequest-input.updateFriendRequestArgs';
 import { FriendRequest } from './friendRequest.model';
 import { FriendRequestService } from './friendRequest.service';
-import { FriendRequestData } from './friendRequestData.model';
+import { FriendRequestData } from '../user/friendRequestData.model';
 
 export class UpdateFriendRequestData {
   userId: number;

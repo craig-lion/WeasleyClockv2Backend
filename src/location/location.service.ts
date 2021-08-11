@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { User } from 'src/user/user.model';
 import { Connection, Repository } from 'typeorm';
 import { Location } from './location.model';
 
@@ -29,6 +30,32 @@ export class LocationService {
 
   async allLocations(): Promise<Location[]> {
     const options = {
+      relations: ['createdBy'],
+    };
+    return this.locationsRepository.find(options);
+  }
+
+  async allPublicLocations(): Promise<Location[]> {
+    const options = {
+      // where: { privacy: 'public' },
+      relations: ['createdBy'],
+    };
+    const data = await this.locationsRepository.find(options);
+
+    console.log('data in all Public Locations: ', data);
+
+    return data;
+  }
+  async allFriendLocations(user: User): Promise<Location[]> {
+    const friendIds: number[] = user.friends
+      .filter((friend) => friend.status === 'accepted')
+      .map((friend) => friend.id);
+
+    const options = {
+      where: {
+        createdBy: [...friendIds],
+        privacy: 'friends',
+      },
       relations: ['createdBy'],
     };
     return this.locationsRepository.find(options);
@@ -79,8 +106,7 @@ export class LocationService {
     // adventures,
   }) {
     const queryRunner = this.connection.createQueryRunner();
-    const location = new Location();
-    location.id = id;
+    const location: Location = (await this.findLocations([id]))[0];
     if (name) {
       location.name = name;
     }
@@ -89,6 +115,7 @@ export class LocationService {
     }
     if (privacy) {
       location.privacy = privacy;
+      console.log('privacy: ', location.privacy);
     }
     if (favoritedBy) {
       location.favoritedBy = favoritedBy;
@@ -98,10 +125,10 @@ export class LocationService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
-      return await queryRunner.manager.save(location);
+      await queryRunner.manager.save(location);
 
       await queryRunner.commitTransaction();
-      return location;
+      // return location;
     } catch (err) {
       // if we have errors rollback the changes
       console.log('err:', err);
@@ -109,6 +136,7 @@ export class LocationService {
     } finally {
       // you need to release a queryRunner which was manually instantiated
       await queryRunner.release();
+      return location;
     }
   }
 }

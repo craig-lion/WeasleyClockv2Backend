@@ -4,8 +4,8 @@ import {
   Args,
   Mutation,
   ResolveField,
-  Parent,
   Int,
+  Subscription,
 } from '@nestjs/graphql';
 import { Location } from 'src/location/location.model';
 import { LocationService } from 'src/location/location.service';
@@ -19,7 +19,7 @@ import { CurrentUser } from 'src/auth/currentUser.decorator';
 import { AuthService } from 'src/auth/userAuth.service';
 import { VerifiedUser } from './verifiedUser.model';
 import { DataToken } from 'src/auth/user.DataToken';
-import { FriendRequestData } from 'src/requests/friendRequestData.model';
+import { FriendRequestData } from 'src/user/friendRequestData.model';
 import { FriendRequest } from 'src/requests/friendRequest.model';
 import { ConfigService } from '@nestjs/config';
 import { Public } from 'src/auth/publicRoute.decorator';
@@ -37,7 +37,7 @@ export class UserResolver {
   ) {}
 
   @ResolveField('currentLocation', () => Location, { nullable: true })
-  async getCurrentLocation(@Parent() user: User) {
+  async getCurrentLocation(@CurrentUser() user: User) {
     // console.log('this is user in oneUSer: ', user.currentLocation);
     const id = user.currentLocation?.id;
     if (!id) {
@@ -49,7 +49,7 @@ export class UserResolver {
   }
 
   @ResolveField('locations', () => [Location], { nullable: true })
-  async getLocations(@Parent() user: User) {
+  async getLocations(@CurrentUser() user: User) {
     // console.log('this is user in locations resolveField: ', user);
     const ids: number[] = user.locations.map((location) => location.id);
     // console.log(
@@ -69,7 +69,7 @@ export class UserResolver {
   }
 
   @ResolveField('favoriteLocations', () => [Location], { nullable: true })
-  async getFavoriteLocations(@Parent() user: User) {
+  async getFavoriteLocations(@CurrentUser() user: User) {
     // console.log('this is user in favoriteLocations resolver: ', user);
     const id = user.favoriteLocations.map((location) => location.id);
     // console.log(
@@ -89,26 +89,28 @@ export class UserResolver {
   }
 
   @ResolveField('createdLocations', () => [Location], { nullable: true })
-  async getCreatedLocations(@Parent() user: User) {
+  async getCreatedLocations(@CurrentUser() user: User) {
     const ids = user.createdLocations.map((location) => location.id);
     // console.log('this should be ids in createdLocations: ', ids);
     return this.locationService.findLocations(ids);
   }
 
   // @ResolveField('createdAdventures', () => [AdventureRequest])
-  // async getCreatedAdventures(@Parent() adventureRequest: AdventureRequest) {
+  // async getCreatedAdventures(@CurrentUser() adventureRequest: AdventureRequest) {
   //   const { id } = adventureRequest;
   //   this.adventureRequestService.findAdventureRequest(id);
   // }
 
   // @ResolveField('adventures', () => [AdventureRequest])
-  // async getInvitedAdventures(@Parent() adventureRequest: AdventureRequest) {
+  // async getInvitedAdventures(@CurrentUser() adventureRequest: AdventureRequest) {
   //   const { id } = adventureRequest;
   //   this.adventureRequestService.findAdventureRequest(id);
   // }
 
   @ResolveField('friends', () => FriendRequestData)
-  async getFriends(@Parent() user: User): Promise<FriendRequestData | null> {
+  async getFriends(
+    @CurrentUser() user: User,
+  ): Promise<FriendRequestData | null> {
     const { id } = user;
     const friendsData = new FriendRequestData();
     const allRequests: FriendRequest[] = await this.friendRequestService.findUserRequests(
@@ -175,7 +177,7 @@ export class UserResolver {
   @Query(() => [User], { name: 'user' })
   async oneUser(@CurrentUser() user: User) {
     // TODO - Route should access currentUser and get name from there
-    console.log('this is oneUser: ', user);
+    // console.log('this is oneUser: ', user);
     const data = await this.userService.findByName(user.name);
     return data;
   }
@@ -255,6 +257,8 @@ export class UserResolver {
 
     if (locations) {
       locationsArray = await this.locationService.findLocations(locations);
+
+      // console.log('locations in updateUser: ', locationsArray.length);
     }
     if (currentLocation) {
       currentLocationObj = await this.locationService.findLocations([
@@ -280,5 +284,10 @@ export class UserResolver {
   async deleteUser(@Args('id', { type: () => Int }) id: number) {
     this.userService.removeUser(id);
     return true;
+  }
+
+  @Subscription(() => Location)
+  async friendCurrentLocation(@CurrentUser() user: VerifiedUser) {
+    return (await this.locationService.findLocations([user.id]))[0];
   }
 }

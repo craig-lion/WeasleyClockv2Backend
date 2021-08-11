@@ -43,7 +43,7 @@ export class FriendRequestService {
 
   async findUserRequests(id: number): Promise<FriendRequest[]> {
     const options = {
-      where: [{ recipient: { id } }, { createdBy: { id } }],
+      where: [{ createdBy: { id } }],
       relations: ['createdBy', 'recipient'],
     };
     // console.log('this is options: ', options.where);

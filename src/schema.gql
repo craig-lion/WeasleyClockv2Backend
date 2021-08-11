@@ -77,6 +77,7 @@ type Query {
   userNotFriends: [User!]!
   me: User!
   allLocations: [Location!]!
+  friendAndPublicLocations: [Location!]!
   Location(id: Int!): Location!
   allAdventures: [Adventure!]!
   Adventure(id: Int!): Adventure!
@@ -158,4 +159,8 @@ input CreateAdventureRequestArgs {
 input UpdateAdventureRequestArgs {
   id: Int!
   status: String!
+}
+
+type Subscription {
+  friendCurrentLocation: Location!
 }

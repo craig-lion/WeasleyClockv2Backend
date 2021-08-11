@@ -67,23 +67,29 @@ export class LocationResolver {
     return data;
   }
 
-  @Query(() => [Location], { name: 'nonUserOwnedLocations' })
-  async nonUserOwnedLocations(@CurrentUser() user: User) {
-    // get userLocations
-    const userLocations: Location[] = [...user.locations];
-    // get AllLocations
-    const allLocations: Location[] = await this.locationService.allLocations();
-    // filter out userLocations
-    const locationArray: Location[] = [];
-    allLocations.forEach((location) => {
-      if (
-        !userLocations.some((userLocation) => location.id === userLocation.id)
-      ) {
-        locationArray.push(location);
-      }
-    });
-    // return remaining loations
-    return locationArray;
+  @Query(() => [Location], { name: 'friendAndPublicLocations' })
+  async friendAndPublicLocations(@CurrentUser() user: User) {
+    // get all Public locations and filter out user Locations
+    const publicLocations: Location[] = (
+      await this.locationService.allPublicLocations()
+    ).filter(
+      (location) =>
+        !user.locations
+          .map((userLocation) => userLocation.id)
+          .includes(location.id),
+    );
+
+    console.log('publicLocations: ', publicLocations);
+
+    // get all friend locations
+    const friendLocations: Location[] = await this.locationService.allFriendLocations(
+      user,
+    );
+
+    console.log('friendLocations: ', friendLocations);
+
+    // combine and return
+    return [...publicLocations, ...friendLocations];
   }
 
   @Query(() => Location, { name: 'Location' })
@@ -112,11 +118,11 @@ export class LocationResolver {
     });
     // add new Location to user.locations
     if (newLocation) {
-      await this.userService.addLocationHelper({
+      return await this.userService.addLocationHelper({
         currentUser: user.id,
         location: newLocation,
       });
-      return newLocation;
+      // return newLocation;
     } else {
       throw new Error('Could not create new location');
     }
