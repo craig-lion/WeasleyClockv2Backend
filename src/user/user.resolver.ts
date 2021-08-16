@@ -7,6 +7,7 @@ import {
   Int,
   Subscription,
 } from '@nestjs/graphql';
+import { PubSub } from 'graphql-subscriptions';
 import { Location } from 'src/location/location.model';
 import { LocationService } from 'src/location/location.service';
 import { UpdateUserInput } from './user-input.updateUser';
@@ -25,6 +26,8 @@ import { ConfigService } from '@nestjs/config';
 import { Public } from 'src/auth/publicRoute.decorator';
 
 //TODO: Can I name overall resolver and then simplify mutation names i.e. user{mutation{update}}
+
+const pubSub = new PubSub();
 
 @Resolver(() => User)
 export class UserResolver {
@@ -50,7 +53,7 @@ export class UserResolver {
 
   @ResolveField('locations', () => [Location], { nullable: true })
   async getLocations(@CurrentUser() user: User) {
-    // console.log('this is user in locations resolveField: ', user);
+    console.log('this is user in locations resolveField: ', user);
     const ids: number[] = user.locations.map((location) => location.id);
     // console.log(
     //   'user.map: ',
@@ -64,7 +67,10 @@ export class UserResolver {
     //   typeof user.favoriteLocations,
     // );
     const data = await this.locationService.findLocations(ids);
-    // console.log('thi s is data in user.locations resolver: ', data);
+    console.log(
+      'thi s is data in user.locations resolver AND ANOTHER TEST: ',
+      data,
+    );
     return data;
   }
 
@@ -113,9 +119,8 @@ export class UserResolver {
   ): Promise<FriendRequestData | null> {
     const { id } = user;
     const friendsData = new FriendRequestData();
-    const allRequests: FriendRequest[] = await this.friendRequestService.findUserRequests(
-      id,
-    );
+    const allRequests: FriendRequest[] =
+      await this.friendRequestService.findUserRequests(id);
     // ACCEPTED
     const acceptedFriends: FriendRequest[] = allRequests.filter(
       (request) => request.status === 'accepted',
@@ -185,9 +190,8 @@ export class UserResolver {
   @Query(() => [User], { name: 'userNotFriends' })
   async userNotFriends(@CurrentUser() user: VerifiedUser) {
     // Get All FriendRequests
-    const requests: FriendRequest[] = await this.friendRequestService.findUserRequests(
-      user.id,
-    );
+    const requests: FriendRequest[] =
+      await this.friendRequestService.findUserRequests(user.id);
     // console.log('this is requests: ', requests.length);
     // Capture all userNames from friendRequests
     const nameSet: Set<number> = new Set();
@@ -250,27 +254,34 @@ export class UserResolver {
       currentLocation,
       favoriteLocations,
     }: UpdateUserInput,
-  ) {
-    let currentLocationObj;
+  ): Promise<User> {
+    let currentLocationObj: Location = new Location();
     let locationsArray: Location[] = [];
     let favoriteLocationsArray: Location[] = [];
+
+    console.log('locations in updateUser: ', locations);
 
     if (locations) {
       locationsArray = await this.locationService.findLocations(locations);
 
-      // console.log('locations in updateUser: ', locationsArray.length);
+      console.log('locations in updateUser: ', locationsArray.length);
     }
     if (currentLocation) {
-      currentLocationObj = await this.locationService.findLocations([
-        currentLocation,
-      ]);
+      currentLocationObj = (
+        await this.locationService.findLocations([currentLocation])
+      )[0];
+      //Subscription Test
+      pubSub.publish('currentLocationUpdated', {
+        currentLocationUpdated: currentLocationObj,
+      });
+      //Subscription Test
     }
     if (favoriteLocations) {
       favoriteLocationsArray = await this.locationService.findLocations(
         favoriteLocations,
       );
     }
-    return this.userService.updateUser({
+    const data = await this.userService.updateUser({
       currentUser: user.id,
       newName: name,
       password,
@@ -278,6 +289,9 @@ export class UserResolver {
       currentLocationObj,
       favoriteLocationsArray,
     });
+
+    console.log('this is data in updateUser: ', data);
+    return data;
   }
 
   @Mutation(() => Boolean, { name: 'deleteUser' })
@@ -287,7 +301,9 @@ export class UserResolver {
   }
 
   @Subscription(() => Location)
-  async friendCurrentLocation(@CurrentUser() user: VerifiedUser) {
-    return (await this.locationService.findLocations([user.id]))[0];
+  currentLocationUpdated() {
+    const test = pubSub.asyncIterator('currentLocationUpdated');
+    console.log('test: ', test);
+    return test;
   }
 }

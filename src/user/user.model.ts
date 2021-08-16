@@ -45,7 +45,9 @@ export class User {
   locations: Location[];
 
   @Field(() => [Location], { nullable: true })
-  @ManyToMany(() => Location, (location) => location.favoritedBy)
+  @ManyToMany(() => Location, (location) => location.currentUsers, {
+    cascade: true,
+  })
   @JoinTable({
     name: 'user_favoriteLocations',
     joinColumn: { name: 'userId', referencedColumnName: 'id' },

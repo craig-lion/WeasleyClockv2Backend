@@ -162,5 +162,5 @@ input UpdateAdventureRequestArgs {
 }
 
 type Subscription {
-  friendCurrentLocation: Location!
+  currentLocationUpdated: Location!
 }

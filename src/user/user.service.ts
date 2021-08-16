@@ -173,10 +173,10 @@ export class UserService {
     newName: string | undefined;
     password: string | undefined;
     locationsArray: Location[];
-    currentLocationObj: any;
+    currentLocationObj: Location;
     favoriteLocationsArray: Location[];
   }) {
-    console.log('locationsArray in userService: ', locationsArray);
+    // console.log('locationsArray in userService: ', locationsArray);
     const queryRunner = this.connection.createQueryRunner();
     // console.log('this is id in updateUser: ', currentUser);
     const user = await this.findOne(currentUser);
@@ -191,7 +191,7 @@ export class UserService {
         user.password = hash;
       });
     }
-    if (currentLocationObj) {
+    if (currentLocationObj.id) {
       // console.log('this is currentLocationObj: ', currentLocationObj);
       user.currentLocation = currentLocationObj[0];
     }
@@ -207,17 +207,18 @@ export class UserService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
-      // console.log('user before save', user);
+      console.log('user before save', user.locations.length);
       await queryRunner.manager.save(user);
       await queryRunner.commitTransaction();
       // console.log('user after commit', user);
-      return user;
+      // return user;
     } catch (err) {
       // if we have errors rollback the changes
       await queryRunner.rollbackTransaction();
     } finally {
       // you need to release a queryRunner which was manually instantiated
       await queryRunner.release();
+      return user;
     }
   }
   async addLocationHelper({

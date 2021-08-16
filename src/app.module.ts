@@ -48,7 +48,7 @@ console.log('join: ', join(__dirname, '..', 'build'));
         entities: [User, Location, Adventure, FriendRequest, AdventureRequest],
         synchronize: true,
         dropSchema: false,
-        logging: false,
+        logging: true,
         connectTimeoutMS: 20000,
         ssl: {
           ca: fs
@@ -60,6 +60,7 @@ console.log('join: ', join(__dirname, '..', 'build'));
     GraphQLModule.forRoot({
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       context: ({ req }) => ({ headers: req.headers }),
+      installSubscriptionHandlers: true,
     }),
   ],
   controllers: [AppController],
